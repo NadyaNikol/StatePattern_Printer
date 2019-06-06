@@ -11,6 +11,9 @@ namespace ConsoleApp2
         static void Main(string[] args)
         {
             Printer printer = new Printer();
+            printer.State = new OnState();
+            printer.Print(10);
+
 
             IPrinterState state = new OnState();
             state.AddPages(printer, 10);
@@ -26,6 +29,11 @@ namespace ConsoleApp2
     {
         public int Pages { set; get; }
         public IPrinterState State { get; set; }
+
+        public void Print(int pages)
+        {
+            State.PrintPages(this, pages);
+        }
     }
 
     public interface IPrinterState
@@ -116,15 +124,11 @@ namespace ConsoleApp2
         public void On(Printer printer)
         {
             Console.WriteLine("Невозможно использовать принтер без бумаги, необходимо домабить бумагу в принтер");
-            AddPages(printer, 10);
-            printer.State = new OnState();
         }
 
         public void PrintPages(Printer printer, int pagesCount)
         {
             Console.WriteLine("Для печати недостаточно бумаги, необходимо добавить бумагу в принтер");
-            AddPages(printer, 10);
-            printer.State = new PrintState();
         }
     }
 
