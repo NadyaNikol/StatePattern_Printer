@@ -11,16 +11,38 @@ namespace ConsoleApp2
         static void Main(string[] args)
         {
             Printer printer = new Printer();
+            printer.Pages = 15;
             printer.State = new OnState();
+            printer.On();
             printer.Print(10);
+            printer.AddPages(10);
+            printer.Off();
 
 
-            IPrinterState state = new OnState();
-            state.AddPages(printer, 10);
-            state.PrintPages(printer,9);
+            printer.State = new PrintState();
+            printer.On();
+            printer.Print(15);
+            printer.AddPages(19);
+            printer.Off();
 
-            IPrinterState state2 = new OffState();
-            state2.Off(printer);
+
+            printer.State = new OffState();
+            printer.On();
+            printer.Print(25);
+            printer.AddPages(20);
+            printer.Off();
+
+
+            printer.State = new WithoutPaperState();
+            printer.On();
+            printer.Print(9);
+            printer.AddPages(7);
+            printer.Off();
+
+
+
+            Console.ReadKey();
+
         }
     }
 
@@ -33,6 +55,21 @@ namespace ConsoleApp2
         public void Print(int pages)
         {
             State.PrintPages(this, pages);
+        }
+
+        public void On()
+        {
+            State.On(this);
+        }
+
+        public void Off()
+        {
+            State.Off(this);
+        }
+
+        public void AddPages(int pages)
+        {
+            State.AddPages(this, pages);
         }
     }
 
@@ -49,7 +86,8 @@ namespace ConsoleApp2
     {
         public void AddPages(Printer printer, int pagesCount)
         {
-            printer.Pages += pagesCount; ;
+            printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
         }
 
         public void Off(Printer printer)
@@ -84,6 +122,7 @@ namespace ConsoleApp2
         public void AddPages(Printer printer, int pagesCount)
         {
             printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
         }
 
         public void Off(Printer printer)
@@ -112,6 +151,7 @@ namespace ConsoleApp2
         public void AddPages(Printer printer, int pagesCount)
         {
             printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
             printer.State = new OnState();
         }
 
@@ -137,6 +177,7 @@ namespace ConsoleApp2
         public void AddPages(Printer printer, int pagesCount)
         {
             printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
         }
 
         public void Off(Printer printer)
