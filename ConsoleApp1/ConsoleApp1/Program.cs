@@ -4,35 +4,62 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleApp1
+namespace ConsoleApp2
 {
     class Program
     {
         static void Main(string[] args)
         {
+            Printer printer = new Printer();
+            printer.Pages = 15;
+            printer.State = new OnState();
+            printer.On();
+            printer.Print(10);
+            printer.AddPages(10);
+            printer.Off();
 
-            Printer printer = new Printer(new PrintPrinterState(10, 3));
-            printer.Print();
+
+            printer.State = new PrintState();
+            printer.On();
+            printer.Print(15);
+            printer.AddPages(19);
+            printer.Off();
+
+
+            printer.State = new OffState();
+            printer.On();
+            printer.Print(25);
+            printer.AddPages(20);
+            printer.Off();
+
+
+            printer.State = new WithoutPaperState();
+            printer.On();
+            printer.Print(9);
+            printer.AddPages(7);
+            printer.Off();
+
+
 
             Console.ReadKey();
+
         }
     }
 
 
-    interface IStatePrinter
+    public class Printer
     {
-        void  Off(Printer printer);
-        void Wait(Printer printer);
-        void Print(Printer printer);
-        void WithoutLists(Printer printer);
-    }
+        public int Pages { set; get; }
+        public IPrinterState State { get; set; }
 
-    class Printer
-    {
-        public IStatePrinter State { set; get; }
-        public Printer (IStatePrinter state)
+        public void Print(int pages)
         {
-            this.State = state;
+            State.PrintPages(this, pages);
+        }
+
+        public void On()
+        {
+            State.On(this);
         }
 
         public void Off()
@@ -40,175 +67,134 @@ namespace ConsoleApp1
             State.Off(this);
         }
 
-        public void Wait()
+        public void AddPages(int pages)
         {
-            State.Wait(this);
-        }
-
-        public void Print()
-        {
-            State.Print(this);
-        }
-
-        public void WithoutLists()
-        {
-            State.WithoutLists(this);
+            State.AddPages(this, pages);
         }
     }
 
-    class OffState : IStatePrinter
+    public interface IPrinterState
     {
-        public void Off(Printer printer)
-        {
-            Console.WriteLine("Для начала работы с принтером следует его включить");
-        }
+        void On(Printer printer);
+        void Off(Printer printer);
+        void PrintPages(Printer printer, int pagesCount);
 
-        public void Print(Printer printer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Wait(Printer printer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WithoutLists(Printer printer)
-        {
-            throw new NotImplementedException();
-        }
+        void AddPages(Printer printer, int pagesCount);
     }
 
-
-    class WaitPrinterState : IStatePrinter
+    public class OnState : IPrinterState
     {
-        public void Off(Printer printer)
+        public void AddPages(Printer printer, int pagesCount)
         {
-            throw new NotImplementedException();
-        }
-
-        public void Print(Printer printer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Wait(Printer printer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WithoutLists(Printer printer)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    class PrintPrinterState : IStatePrinter
-    {
-        int allLists;
-        int listsForPrint;
-        public PrintPrinterState (int allLists, int listsForPrint)
-        {
-            this.allLists = allLists;
-            this.listsForPrint = listsForPrint;
+            printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
         }
 
         public void Off(Printer printer)
         {
-            Console.WriteLine("Для начала работы с принтером следует его включить");
-            printer.Wait();
+            Console.WriteLine("Принтер выключен");
+            printer.State = new OffState();
         }
 
-        public void Print(Printer printer)
+        public void On(Printer printer)
         {
-            Console.WriteLine($"\nПечать страниц. Пожалуйста подождите...\n");
-            for (int i = 0; i < listsForPrint; i++)
+            Console.WriteLine("Принтер уже включен");
+        }
+
+        public void PrintPages(Printer printer, int pagesCount)
+        {
+           if (printer.Pages >pagesCount)
             {
-                Console.WriteLine($"Печать {i + 1}-ой страницы");
-                System.Threading.Thread.Sleep(1000);
-
-                if (allLists - i - 1 <= 0)
-                {
-                    Console.WriteLine("Невозможно распечатать, нет бумаги в принтере");
-                    printer.WithoutLists();
-                    break;
-                }
+                printer.Pages -= pagesCount;
+                Console.WriteLine($"Принтер напечатал {pagesCount} страниц");
+               // printer.State = new PrintState();
+            }
+            else
+            {
+                printer.Pages = 0;
+                printer.State = new WithoutPaperState();
             }
         }
+    }
 
-        public void Wait(Printer printer)
+    public class OffState : IPrinterState
+    {
+        public void AddPages(Printer printer, int pagesCount)
         {
-            Console.WriteLine("Принтер готов к использованию");
-            printer.Print();
+            printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
         }
 
-        public void WithoutLists(Printer printer)
+        public void Off(Printer printer)
         {
-            Console.WriteLine("Пожалуйста, добавте бумагу в принтер");
-            printer.Wait();
+            Console.WriteLine("Принтер уже выключен");
+        }
+
+        public void On(Printer printer)
+        {
+            Console.WriteLine("Принтер включен");
+            if (printer.Pages > 0)
+                printer.State = new OnState();
+            else
+                printer.State = new WithoutPaperState();
+        }
+
+        public void PrintPages(Printer printer, int pagesCount)
+        {
+            Console.WriteLine("Перед работой с принтером необходимо его включить");
+            printer.State = new OnState();
         }
     }
 
+    public class WithoutPaperState : IPrinterState
+    {
+        public void AddPages(Printer printer, int pagesCount)
+        {
+            printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
+            printer.State = new OnState();
+        }
 
+        public void Off(Printer printer)
+        {
+            Console.WriteLine("Принтер выключен");
 
+        }
 
+        public void On(Printer printer)
+        {
+            Console.WriteLine("Невозможно использовать принтер без бумаги, необходимо домабить бумагу в принтер");
+        }
 
+        public void PrintPages(Printer printer, int pagesCount)
+        {
+            Console.WriteLine("Для печати недостаточно бумаги, необходимо добавить бумагу в принтер");
+        }
+    }
 
+    public class PrintState : IPrinterState
+    {
+        public void AddPages(Printer printer, int pagesCount)
+        {
+            printer.Pages += pagesCount;
+            Console.WriteLine($"В принтер добавлено {pagesCount} листов");
+        }
 
+        public void Off(Printer printer)
+        {
+            Console.WriteLine("Невозможно выключить принтер во время печати");
+        }
 
-    //enum StatePrinter
-    //{
-    //    Off,
-    //    Wait,
-    //    Print,
-    //    WithoutLists
-    //}
+        public void On(Printer printer)
+        {
+            Console.WriteLine("Принтер уже включен");
 
-    //class Printer
-    //{
-    //    public StatePrinter state;
+        }
 
-    //    public void Print(int listsForPrint, int allLists)
-    //    {
-    //        if (state == StatePrinter.Off)
-    //        {
-    //            Console.WriteLine("Для начала работы с принтером следует его включить");
-    //            state = StatePrinter.Wait;
-    //        }
+        public void PrintPages(Printer printer, int pagesCount)
+        {
+            Console.WriteLine("Принтер уже находиться в состоянии печати");
 
-    //         if (state == StatePrinter.Wait && state != StatePrinter.WithoutLists)
-    //        {
-    //            Console.WriteLine("Принтер готов к использованию");
-    //            state = StatePrinter.Print;
-    //        }
-
-    //         if (state == StatePrinter.Print)
-    //        {
-    //            Console.WriteLine($"\nПечать страниц. Пожалуйста подождите...\n");
-    //            for (int i = 0; i < listsForPrint; i++)
-    //            {
-    //                Console.WriteLine($"Печать {i+1}-ой страницы");
-    //                System.Threading.Thread.Sleep(1000);
-
-    //                if (allLists - i-1 <= 0)
-    //                {
-    //                    Console.WriteLine("Невозможно распечатать, нет бумаги в принтере");
-    //                    state = StatePrinter.WithoutLists;
-    //                    break;
-    //                }
-    //            }
-
-    //        }
-
-    //         if (state == StatePrinter.WithoutLists)
-    //        {
-    //            Console.WriteLine("Пожалуйста, добавте бумагу в принтер");
-    //            state = StatePrinter.Wait;
-    //        }
-
-    //    }
-
-
-    //}
-
+        }
+    }
 }
